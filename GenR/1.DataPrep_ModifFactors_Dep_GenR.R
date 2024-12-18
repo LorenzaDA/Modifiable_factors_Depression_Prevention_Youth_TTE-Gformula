@@ -41,10 +41,6 @@ data <- lapply(paths_genr, function(x)
     {data.table::setnames(., tolower(names(.)))}
 )
 
-# there are warnings, not necessarily relevant to vars you interested in 
-# but this needs to be checked for each study specifically 
-
-
 
 #######
 # Merge the data
@@ -92,8 +88,8 @@ vars <- c("idc", "idm", "mother", # id vars
           "i0300181_cleaned", "i0300281_cleaned", "i0400181_cleaned", "i0400281_cleaned", 
           "i0400381_cleaned", "i0400481_cleaned", "i0400581_cleaned", "i0400681_cleaned", 
           "i0800181_cleaned", "i0800281_cleaned", "i0900181_cleaned", "i0900281_cleaned", "i0900381_cleaned", 
-          "i0900481_cleaned", "i0900581_cleaned", "i0900681_cleaned", # screentime - TV 
-          "i1200181_cleaned", "i1200281_cleaned", "i1300181_cleaned", "i1300281_cleaned", # screen time - chats & videograme
+          "i0900481_cleaned", "i0900581_cleaned", "i0900681_cleaned", 
+          "i1200181_cleaned", "i1200281_cleaned", "i1300181_cleaned", "i1300281_cleaned", # screen time 
           "h0500181_cleaned", "h0500281_cleaned", "h0600181_cleaned", "h0700181_cleaned", 
           "h0700281_cleaned", "h0700381_cleaned", "h0700381_cleaned_recode", "h0800181_cleaned", "h0800281_cleaned", # sports 
           "acc_dur_noc_ad_t5a5_mn", "agechild", "acc_onset_ad_t5a5_mn", "acc_timeinbed_ad_t5a5_mn",  # sleep and its qc vars (sleep onset latency must be >0, onset of sleep > 6pm)
@@ -117,7 +113,7 @@ dd3 <- dd3[ , names(dd3) %in% vars]
 
 # merge with the PGS files
 # we have two, one per genetic data release
-# more info can be found in the supplement of this paper (work by Dr. Nicole Creasy)
+# more info can be found in the work of Dr. Nicole Creasy)
 prs_genr4 <- read.csv("mdd_GENR4.all_score.csv") 
 prs_genr3 <- read.csv("mdd_GENR3.all_score.csv")
 
@@ -146,7 +142,7 @@ prs_genr4 <- prs_genr4 %>%
 prs <- merge(prs_genr3, prs_genr4, by = intersect(names(prs_genr3), names(prs_genr4)), all = T)
 
 # select relevant IDs and columns
-prs_selected <- prs[prs$IID %in% selection_all, c("IID", "Pt_5e.08")] # 4,310 
+prs_selected <- prs[prs$IID %in% selection_all, c("IID", "Pt_5e.08")]  
 
 # merge data
 dd3 <- merge(dd3, prs_selected, by.x = "idc", by.y = "IID", all.x = T)
@@ -690,12 +686,6 @@ dd6 <- dd5 %>% dplyr::mutate(mat_edu = recode_factor(educm, "no education finish
                                                   )
 
 
-# NB int scores for 9 and 14 for YSR very different - max 12 vs max 52 -
-# this is because of the difference in scale 
-# this was discussed with Dr. van der Ende and Dr. Elisabet Blok, who extensively used this data
-# it is not an issue to adjust for YSR at 9 years when considering YSR at 14 years as the main outcome
-
-
 ####
 # Flow chart
 #### 
@@ -712,11 +702,12 @@ percentile_80 <- quantile(dd6$int_c_9, 0.80, na.rm = T) # value of 4 in internal
 # & has data on any of the modifiable factors at baseline 
 # Exclusion: clinically-relevant internalizing symptoms at baseline
 # and randomly include on sibling from each family set
-final_p <- dd6 %>% # 9901
-  subset((!is.na(int_c_9))) %>% # inclusion: psych symptoms at baseline 4,352 (5,576 without the data on int or modif)
-  subset(!is.na(sleep) | !is.na(pa_final) | !is.na(friends) | !is.na(screen)) %>% # 4,352
-  subset(int_c_9 < 6) %>% # 4,010
-  subset(!duplicated(mother)) # 3739
+
+final_p <- dd6 %>% 
+  subset((!is.na(int_c_9))) %>% 
+  subset(!is.na(sleep) | !is.na(pa_final) | !is.na(friends) | !is.na(screen)) %>% 
+  subset(int_c_9 < 6) %>% 
+  subset(!duplicated(mother)) 
 
 # save
 saveRDS(final_p, paste0(indata, "genr_main_data_FINAL.Rds"))
@@ -774,18 +765,12 @@ out <- c("mother", "startfase3_9")
 dd <- dd[ , !names(dd) %in% out]
 
 ### Variables 
-# specify the variables that can aid the prediction (i.e. help predict the missingness in other variables)
 predictors_for_imputation <- c("mat_age", "mat_edu", "income", "mat_psych", "puberty", "ethn")
-
-# specify the variables that you want to impute. It's important to add in the predictors for imputation 
-## this is important because if our predictors have NAs, our output of the imputation will also present NAs 
 impvars <- c("mat_age", "mat_edu", "income", "mat_psych", "puberty", "ethn", "age")  
 
 #dryrun mice (page 35 mice guide)
 dd$idc <- factor(dd$idc)
 ini <- mice(dd, maxit = 0, printF = FALSE)
-# nb if you see a logged event where it's about constant as id 
-# then it's about that var being a character. 
 
 ### Prediction matrix
 # set the prediction matrix completely to 0, i.e. nothing predicts anything
@@ -808,8 +793,6 @@ meth <- ini$meth
 meth[!names(meth) %in% impvars] <- "" 
 
 ### Order of imputation 
-# the order in which variables are imputed matters in mice. 
-# You can first put vars which can be predictive of the following vars 
 visit <- ini$visit
 visit <- visit[visit %in% impvars]
 visit2 <- c("mat_age", "mat_edu", "income", "mat_psych", "age", "puberty", 'ethn')
@@ -931,7 +914,7 @@ load("modifiable_dep_youth_alldata_genr.RData")
 ### sensitivity g-formula ###
 # this is an additional two datasets
 # one is with low genetic liability to depression (low_hGr)
-# one is with low symptoms of depression at baseline 
+# one is with low symptoms of depression at baseline (low_indicated)
 
 low_hGr <- dd4[!is.na(dd4$deciles_g) & dd4$deciles_g < 3, ] 
 low_indicated <- dd4[dd4$int_t1 < 2, ] 
@@ -1004,48 +987,30 @@ out <- c("mother", "startfase3_9")
 sens_tte <- sens_tte[ , !names(sens_tte) %in% out]
 
 ### variables 
-# specify the variables that can aid the prediction (i.e. help predict the missingness in other variables)
 predictors_for_imputation <- c("mat_age", "mat_edu", "income", "mat_psych", "puberty", "ethn")
-
-# specify the variables that you want to impute. It's important to add in the predictors for imputation 
-## this is important because if our predictors have NAs, our output of the imputation will also present NAs 
 impvars <- c("mat_age", "mat_edu", "income", "mat_psych", "puberty", "ethn", "age")  
 
-#dryrun mice (page 35 mice guide)
 sens_tte$idc <- factor(sens_tte$idc)
 ini <- mice(sens_tte, maxit = 0, printF = FALSE)
-# nb if you see a logged event where it's about constant as id 
-# then it's about that var being a character. 
 
 ### Prediction matrix
-# set the prediction matrix completely to 0, i.e. nothing predicts anything
 pred <- ini$pred
 pred[] <- 0
-
-# set the variables that you want to impute as 1s in the predictor matrix so that they will be imputed 
 pred[rownames(pred) %in% impvars, colnames(pred) %in% impvars] <- 1
-
-# diagonal elements need to be 0s (i.e. one variable does not predict itself)
 diag(pred) <- 0
 
 ### Imputation method
-
-# get the method for imputation
+                        
 meth <- ini$meth
-
-# put to null "" for every combination that is no in the impvars 
 meth[!names(meth) %in% impvars] <- "" 
 
 ### Order of imputation 
-# the order in which variables are imputed matters in mice. 
-# You can first put vars which can be predictive of the following vars 
 visit <- ini$visit
 visit <- visit[visit %in% impvars]
 visit2 <- c("mat_age", "mat_edu", "income", "mat_psych", "age", "puberty", 'ethn')
 
 
 # run the imputation with m (number of datasets) and maxit (number of iterations)
-## here 30 iterations and samples were set 
 imp <- mice::mice(sens_tte, 
                   m = 30, 
                   maxit = 30, 
