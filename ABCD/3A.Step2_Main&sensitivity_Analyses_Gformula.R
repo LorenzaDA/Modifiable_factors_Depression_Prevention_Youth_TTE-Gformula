@@ -29,9 +29,9 @@ baselinevars <- c("sex", "puberty", "age", "parent_edu", "par_psych", "int_t1", 
 
 
 # prep list with all datasets (universal prevention, high genetic liability, high life stress events, indicated)
-# NB here we include also the datasets for sensitivity analyses: 
-# the one with individuals at low genetic liability for depression and those 
-# at with low internalizing symptoms at baseline 
+# NB here we also include the datasets for sensitivity analyses: 
+# the one with individuals at low genetic liability for depression (low_hGr) and those 
+# at with low internalizing symptoms at baseline (low_indicated)
 datasets <- list(dd4, hGr, hEr, indicated, low_hGr, low_indicated)
 names(datasets) <- c("universal", "selective_PGS", "selective_LE", "indicated", "low_PGS", "low_indicated") 
 
@@ -51,8 +51,8 @@ screen_levels <- c("0", "1", "2", "3", "4")
 predict_and_contrast_screen_boot(datasets = datasets, 
                             levels = screen_levels, 
                             baselinevars = baselinevars,
-                            n_boot = 1000, # n of bootstrapping for deriving the CIs
-                            seed = 2023) # for randomization boot
+                            n_boot = 1000, 
+                            seed = 2023) 
 
 
 # Natural course scenario
