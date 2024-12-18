@@ -37,8 +37,7 @@ sum_across_columns <- function(data, vars_to_sum, new_var_name, max_missing_perc
 ####
 # Perform regression across all prevention strategies
 ####
-# this is like the longitudinal reg function but across all datasets and to save the output 
-# across all datasets
+# this is like the longitudinal reg function but across all datasets 
 # data is the list you input with all your datasets for each prevention strategy (universal, selective (x2), indicated)
 # baselinevars = covariates you need to include in the model
 # pred_vars = your main predictors, i.e., each modifiable factor
@@ -189,33 +188,25 @@ predict_and_contrast_screen_boot <- function(datasets, levels, baselinevars, n_b
   for (i in seq_along(datasets)) {
     data <- datasets[[i]]
     
-    # Create predictive model formula
     formula_string <- paste("int_t2_centered ~ splines::ns(screen,2) +", paste(baselinevars, collapse = "+"))
     out_formula <- as.formula(formula_string)
     
-    # Store original levels of factor variables
     factor_levels <- lapply(data[, sapply(data, is.factor)], levels)
     
-    # Prepare storage for bootstrap results
     bootstrap_results <- matrix(NA, nrow = n_boot, ncol = length(levels) - 1)
     colnames(bootstrap_results) <- paste0("contrast_", levels[levels != 2], "_ref2")
     
     for (b in 1:n_boot) {
-      # Bootstrap sample for fitting the model
       indices <- sample(1:nrow(data), replace = TRUE)
       bootstrap_sample <- data[indices, ]
-      
-      # Ensure factor levels are maintained correctly
       for (var in names(factor_levels)) {
         if (var %in% names(bootstrap_sample)) {
           bootstrap_sample[[var]] <- factor(bootstrap_sample[[var]], levels = factor_levels[[var]])
         }
       }
-      
-      # Fit the model on the bootstrap sample
+
       fit.boot <- lm(out_formula, data = bootstrap_sample)
-      
-      # Make predictions on the original data, not the bootstrap sample
+
       pred_list <- list()
       for (level in levels) {
         newdata <- data.frame(screen = as.numeric(level), dplyr::select(data, -screen))
@@ -227,16 +218,13 @@ predict_and_contrast_screen_boot <- function(datasets, levels, baselinevars, n_b
         pred_list[[as.character(level)]] <- predict(fit.boot, newdata = newdata, type = "response")
       }
       
-      # Calculate contrasts between each level and the reference level (e.g., 2)
       contrasts <- sapply(levels[levels != 2], function(level) {
         mean(pred_list[[as.character(level)]]) - mean(pred_list[[as.character(2)]])
       })
       
-      # Store the contrasts for this bootstrap iteration
       bootstrap_results[b, ] <- contrasts
     }
     
-    # Calculate summary statistics for each contrast
     summary_data <- data.frame(Dataset = names(datasets)[i])
     for (j in seq_along(levels[levels != 2])) {
       contrast_col <- colnames(bootstrap_results)[j]
@@ -256,7 +244,6 @@ predict_and_contrast_screen_boot <- function(datasets, levels, baselinevars, n_b
     all_results_combined <- rbind(all_results_combined, summary_data)
   }
   
-  # Save combined results to CSV
   combined_results_filename <- paste0(res, "results_gcomputation_screen_genr_withboot_jan2024.csv")
   write.csv(all_results_combined, file = combined_results_filename, row.names = FALSE)
 }
@@ -277,7 +264,6 @@ predict_and_contrast_screen_nat <- function(datasets, levels, baselinevars) {
   for (i in seq_along(datasets)) {
     data <- datasets[[i]]
     
-    # Create predictive model
     formula_string <- paste("int_t2_centered ~ splines::ns(screen,2) +", paste(baselinevars, collapse = "+"))
     out_formula <- as.formula(formula_string)
     model <- lm(out_formula, data = data)
@@ -285,7 +271,6 @@ predict_and_contrast_screen_nat <- function(datasets, levels, baselinevars) {
     data$natural_course_screen <- predict(model, data, 
                                           type = "response")
     
-    # Predict and calculate contrasts
     for (level in levels) {
       pred_col <- paste0("pred_", level, "hr")
       data[[pred_col]] <- predict(model, newdata = data.frame(screen = as.numeric(level), dplyr::select(data, !screen)), type = "response")
@@ -297,14 +282,11 @@ predict_and_contrast_screen_nat <- function(datasets, levels, baselinevars) {
       data[[contrast_col]] <- data[[paste0("pred_", level, "hr")]] - data$natural_course_screen
     }
     
-    # Summarize contrasts
     summary_data <- data %>% summarize(across(starts_with("contrast_"), mean, na.rm = TRUE))
 
-    # Combine results for all datasets
     all_results_combined <- rbind(all_results_combined, data.frame(Dataset = names(datasets)[i], summary_data))
   }
   
-  # Save combined results to CSV
   combined_results_filename <- paste0(res, "results_gcomputation_naturalcourse_screen_genr_jan2024.csv")
   write.csv(all_results_combined, file = combined_results_filename, row.names = FALSE)
   
@@ -324,26 +306,20 @@ screen_modelmisp <- function(datasets, baselinevars, filepath) {
   
   for (i in seq_along(datasets)) {
     data <- datasets[[i]]
-    
-    # Create predictive model
+
     formula_string <- paste("int_t2_centered ~ splines::ns(screen,2) +", paste(baselinevars, collapse = "+"))
     out_formula <- as.formula(formula_string)
     model <- lm(out_formula, data = data)
-    
-    # Predict for natural course
+
     data$natural_course_screen <- predict(model, data, type = "response")
     
-    # Calculate contrast
     data$contrast <- data$natural_course_screen - data$int_t2_centered
     
-    # Summarize contrasts
     summary_data <- mean(data$contrast, na.rm = TRUE)
     
-    # Combine results for all datasets
     all_results_combined <- rbind(all_results_combined, data.frame(Dataset = names(datasets)[i], summary_data))
   }
   
-  # Save combined results to CSV
   combined_results_filename <- paste0(filepath, "results_gcomputation_screen_ModelMisp_GenR_jan2024.csv")
   tryCatch({
     write.csv(all_results_combined, file = combined_results_filename, row.names = FALSE)
