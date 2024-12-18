@@ -5,7 +5,7 @@
 # license CC 4.0 International
 # DATA: ABCD (release 4.0, from download data manager)
 # AIM OF SCRIPT: are results similar when we additionally adjust for the potential confounding effect of 
-# family conflict on the relationship between modifiable factors and internalizing problems?
+# family conflict on the relationship between modifiable factors and internalizing problems? [analysis suggested at peer review stage]
 # AUTHOR: Lorenza Dall'Aglio (ldallaglio@mgh.harvard.edu; lorenza.dallaglio1@gmail.com)
 
 rm(list=ls())
