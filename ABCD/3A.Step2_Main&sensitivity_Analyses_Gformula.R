@@ -24,8 +24,7 @@ load(paste0(indata, "modifiable_dep_youth_alldata_inclSens.RData"))
 # this is similarly for site. the different datasets have different individuals
 # so some sites which are present in the universal prevention setting, are not 
 # in the other prevention setting. This limits our ability to loop across the various prevention settings (datasets)
-# for these reasons, we residualized for ethn and site. Notably, results were tested also when adjustments (instead of residualization)
-# were performed and they were equivalent
+# for these reasons, we residualized for ethn and site. 
 baselinevars <- c("sex", "puberty", "age", "parent_edu", "par_psych", "int_t1", "mat_age", "income")
 
 
