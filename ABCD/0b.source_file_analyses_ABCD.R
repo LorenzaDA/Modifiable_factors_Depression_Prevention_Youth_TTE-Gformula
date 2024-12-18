@@ -70,23 +70,23 @@ perform_regression_longi <- function(baselinevars, pred_vars) {
   for (var in pred_vars) {
     var_cleaned <- gsub("splines::ns\\((.*?),.*", "\\1", var)
     
-    # Create a formula for the current predictor variable
+    # create a formula for the current predictor variable
     formula_string <- paste("int_t2_centered ~", paste(c(baselinevars), collapse = "+"), "+", var)
     formula <- as.formula(formula_string)
     
-    # Run linear regression
+    # run linear regression
     lm_result <- lm(formula, data = dd)
     
-    # Extract coefficients, standard errors, and p-values
+    # extract coefficients, standard errors, and p-values
     coef_data <- coef(lm_result)
     std_err_data <- summary(lm_result)$coef[, "Std. Error"]
     p_value_data <- summary(lm_result)$coef[, "Pr(>|t|)"]
     
-    # Use regular expression to find the index for the variable of interest
+    # use regular expression to find the index for the variable of interest
     var_regex <- paste0("\\b", gsub("[-.*+^]", "\\\\\\0", var_cleaned), "\\b")
     var_index <- grep(var_regex, names(coef_data), perl = TRUE, ignore.case = TRUE)
     
-    # Check if the variable is found in the coefficients
+    # check if the variable is found in the coefficients
     if (length(var_index) > 0) {
       # Extract the coefficients, standard errors, and p-values
       result_row <- data.frame(Variable = names(coef_data)[var_index],
@@ -94,7 +94,7 @@ perform_regression_longi <- function(baselinevars, pred_vars) {
                                Standard_Error = std_err_data[var_index],
                                P_Value = p_value_data[var_index])
       
-      # Add the result row to the dataframe
+      # add the result row to the dataframe
       results_df <- rbind(results_df, result_row)
     } else {
       print(paste("Variable not found in coefficients:", var))
@@ -120,7 +120,7 @@ perform_regression <- function(data, baselinevars, pred_vars) {
   
   # loop through each predictor variable
   for (var in pred_vars) {
-    # Extract the variable name without the splines::ns() part (applicable in this case for the screen time measure)
+    # extract the variable name without the splines::ns() part (applicable in this case for the screen time measure)
     var_cleaned <- gsub("splines::ns\\((.*?),.*", "\\1", var)
     
     # formula
@@ -178,37 +178,37 @@ predict_and_contrast_pa_boot <- function(datasets, levels, baselinevars, n_boot 
   all_results_combined <- data.frame()
   set.seed(seed)
   
-  # Loop through each dataset
+  # loop through each dataset
   for (i in seq_along(datasets)) {
     data <- datasets[[i]]
     
-    # Create the formula string for the linear model
+    # create the formula string for the linear model
     formula_string <- paste("int_t2_centered ~ pa +", paste(baselinevars, collapse = "+"))
     out_formula <- as.formula(formula_string)
     
-    # Store factor levels to ensure consistency
+    # store factor levels to ensure consistency
     factor_levels <- lapply(data[, sapply(data, is.factor)], levels)
     
-    # Prepare storage for bootstrap results
+    # prepare storage for bootstrap results
     bootstrap_results <- matrix(NA, nrow = n_boot, ncol = length(levels) - 1)
     colnames(bootstrap_results) <- paste0("contrast_", levels[levels != 7], "_ref7")
     
     for (b in 1:n_boot) {
-      # Bootstrap sample for fitting the model
+      # bootstrap sample for fitting the model
       indices <- sample(1:nrow(data), replace = TRUE)
       bootstrap_sample <- data[indices, ]
       
-      # Ensure factor levels are maintained correctly
+      # ensure factor levels are maintained correctly
       for (var in names(factor_levels)) {
         if (var %in% names(bootstrap_sample)) {
           bootstrap_sample[[var]] <- factor(bootstrap_sample[[var]], levels = factor_levels[[var]])
         }
       }
       
-      # Fit the model on the bootstrap sample
+      # fit the model on the bootstrap sample
       fit.boot <- lm(out_formula, data = bootstrap_sample)
       
-      # Make predictions on the original data
+      # make predictions on the original data
       pred_list <- list()
       for (level in levels) {
         newdata <- data.frame(pa = as.numeric(level), dplyr::select(data, -pa))
@@ -220,16 +220,16 @@ predict_and_contrast_pa_boot <- function(datasets, levels, baselinevars, n_boot 
         pred_list[[as.character(level)]] <- predict(fit.boot, newdata = newdata, type = "response")
       }
       
-      # Calculate contrasts between each level and the reference level (e.g., 7 days of PA)
+      # calculate contrasts between each level and the reference level (e.g., 7 days of PA)
       contrasts <- sapply(levels[levels != 7], function(level) {
         mean(pred_list[[as.character(level)]]) - mean(pred_list[[as.character(7)]])
       })
       
-      # Store the contrasts for this bootstrap iteration
+      # store the contrasts for this bootstrap iteration
       bootstrap_results[b, ] <- contrasts
     }
     
-    # Calculate summary statistics for each contrast
+    # calculate summary statistics for each contrast
     summary_data <- data.frame(Dataset = names(datasets)[i])
     for (j in seq_along(levels[levels != 7])) {
       contrast_col <- colnames(bootstrap_results)[j]
@@ -246,11 +246,11 @@ predict_and_contrast_pa_boot <- function(datasets, levels, baselinevars, n_boot 
       )
     }
     
-    # Combine results for all datasets
+    # combine results for all datasets
     all_results_combined <- rbind(all_results_combined, summary_data)
   }
   
-  # Save combined results to CSV
+  # save combined results to CSV
   combined_results_filename <- paste0(res, "results_gcomputation_pa_abcd_withboot.csv")
   write.csv(all_results_combined, file = combined_results_filename, row.names = FALSE)
 }
@@ -269,26 +269,26 @@ predict_and_contrast_screen_boot <- function(datasets, levels, baselinevars, n_b
     out_formula <- as.formula(formula_string)
     factor_levels <- lapply(data[, sapply(data, is.factor)], levels)
     
-    # Prepare storage for bootstrap results
+    # prepare storage for bootstrap results
     bootstrap_results <- matrix(NA, nrow = n_boot, ncol = length(levels) - 1)
     colnames(bootstrap_results) <- paste0("contrast_", levels[levels != 2], "_ref2")
     
     for (b in 1:n_boot) {
-      # Bootstrap sample for fitting the model
+      # bootstrap sample for fitting the model
       indices <- sample(1:nrow(data), replace = TRUE)
       bootstrap_sample <- data[indices, ]
       
-      # Ensure factor levels are maintained correctly
+      # ensure factor levels are maintained correctly
       for (var in names(factor_levels)) {
         if (var %in% names(bootstrap_sample)) {
           bootstrap_sample[[var]] <- factor(bootstrap_sample[[var]], levels = factor_levels[[var]])
         }
       }
       
-      # Fit the model on the bootstrap sample
+      # fit the model on the bootstrap sample
       fit.boot <- lm(out_formula, data = bootstrap_sample)
       
-      # Make predictions on the original data
+      # make predictions on the original data
       pred_list <- list()
       for (level in levels) {
         newdata <- data.frame(screen = as.numeric(level), dplyr::select(data, -screen))
@@ -300,16 +300,16 @@ predict_and_contrast_screen_boot <- function(datasets, levels, baselinevars, n_b
         pred_list[[as.character(level)]] <- predict(fit.boot, newdata = newdata, type = "response")
       }
       
-      # Calculate contrasts between each level and the reference level (e.g., 2)
+      # calculate contrasts between each level and the reference level (e.g., 2)
       contrasts <- sapply(levels[levels != 2], function(level) {
         mean(pred_list[[as.character(level)]]) - mean(pred_list[[as.character(2)]])
       })
       
-      # Store the contrasts for this bootstrap iteration
+      # store the contrasts for this bootstrap iteration
       bootstrap_results[b, ] <- contrasts
     }
     
-    # Calculate summary statistics for each contrast
+    # calculate summary statistics for each contrast
     summary_data <- data.frame(Dataset = names(datasets)[i])
     for (j in seq_along(levels[levels != 2])) {
       contrast_col <- colnames(bootstrap_results)[j]
@@ -348,7 +348,7 @@ predict_and_contrast_screen_nat <- function(datasets, levels, baselinevars) {
   for (i in seq_along(datasets)) {
     data <- datasets[[i]]
     
-    # Create predictive model
+    # formula
     formula_string <- paste("int_t2_centered ~ splines::ns(screen,2) +", paste(baselinevars, collapse = "+"))
     out_formula <- as.formula(formula_string)
     model <- lm(out_formula, data = data)
@@ -356,26 +356,25 @@ predict_and_contrast_screen_nat <- function(datasets, levels, baselinevars) {
     data$natural_course_screen <- predict(model, data, 
                                           type = "response")
     
-    # Predict and calculate contrasts
+    # contrasts
     for (level in levels) {
       pred_col <- paste0("pred_", level, "hr")
       data[[pred_col]] <- predict(model, newdata = data.frame(screen = as.numeric(level), dplyr::select(data, !screen)), type = "response")
     }
-    # contrasts are built for natural course as reference 
     contrast_cols <- paste0("contrast_", levels, "_refNat")
     for (level in levels) {
       contrast_col <- paste0("contrast_", level, "_refNat")
       data[[contrast_col]] <- data[[paste0("pred_", level, "hr")]] - data$natural_course_screen
     }
     
-    # Summarize contrasts
+    # summarize contrasts
     summary_data <- data %>% summarize(across(starts_with("contrast_"), mean, na.rm = TRUE))
 
-    # Combine results for all datasets
+    # combine results for all datasets
     all_results_combined <- rbind(all_results_combined, data.frame(Dataset = names(datasets)[i], summary_data))
   }
   
-  # Save combined results to CSV
+  # save combined results to CSV
   combined_results_filename <- paste0(res, "results_gcomputation_naturalcourse_screen_abcd_jan2024.csv")
   write.csv(all_results_combined, file = combined_results_filename, row.names = FALSE)
 
@@ -390,15 +389,13 @@ predict_and_contrast_pa_nat <- function(datasets, levels, baselinevars) {
   for (i in seq_along(datasets)) {
     data <- datasets[[i]]
     
-    # Create predictive model
     formula_string <- paste("int_t2_centered ~ pa +", paste(baselinevars, collapse = "+"))
     out_formula <- as.formula(formula_string)
     model <- lm(out_formula, data = data)
     
     data$natural_course_pa <- predict(model, data, 
                                       type = "response")
-    
-    # Predict and calculate contrasts
+
     for (level in levels) {
       pred_col <- paste0("pred_", level, "day")
       data[[pred_col]] <- predict(model, newdata = data.frame(pa = as.numeric(level), dplyr::select(data, !pa)), type = "response")
@@ -410,14 +407,10 @@ predict_and_contrast_pa_nat <- function(datasets, levels, baselinevars) {
       data[[contrast_col]] <- data[[paste0("pred_", level, "day")]] - data$natural_course_pa
     }
     
-    # Summarize contrasts
     summary_data <- data %>% summarize(across(starts_with("contrast_"), mean, na.rm = TRUE))
     
-    # Combine results for all datasets
     all_results_combined <- rbind(all_results_combined, data.frame(Dataset = names(datasets)[i], summary_data))
   }
-  
-  # Save combined results to CSV
   combined_results_filename <- paste0(res, "results_gcomputation_pa_naturalcourse_abcd_jan2024.csv")
   write.csv(all_results_combined, file = combined_results_filename, row.names = FALSE)
 }
@@ -458,7 +451,7 @@ screen_modelmisp <- function(datasets, baselinevars, filepath) {
     all_results_combined <- rbind(all_results_combined, data.frame(Dataset = names(datasets)[i], summary_data))
   }
   
-  # save combined results to CSV
+  # save combined results to csv
   combined_results_filename <- paste0(filepath, "results_gcomputation_screen_ModelMisp_ABCD.csv")
  # message for whether results were successfully saved 
    tryCatch({
@@ -495,7 +488,7 @@ pa_modelmisp <- function(datasets, baselinevars, filepath) {
     all_results_combined <- rbind(all_results_combined, data.frame(Dataset = names(datasets)[i], summary_data))
   }
   
-  # save combined results to CSV
+  # save combined results to csv
   combined_results_filename <- paste0(filepath, "results_gcomputation_pa_ModelMisp_ABCD.csv")
   tryCatch({
     write.csv(all_results_combined, file = combined_results_filename, row.names = FALSE)
