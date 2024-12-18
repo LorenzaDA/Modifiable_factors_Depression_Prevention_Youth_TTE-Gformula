@@ -20,30 +20,30 @@ source("/PATH-WHERE-SOURCE-FILE-IS/0a.source_file_packages_paths_ABCD.R")
 
 # outcome 
 
-bpm <- read.delim(paste0(indata, "abcd_yssbpm01.txt"), header = T, na.strings=c("","NA")) # psychiatric problems data (Brief problem monitor) - youth report
+bpm <- read.delim(paste0(indata, "abcd_yssbpm01.txt"), header = T, na.strings=c("","NA")) 
 
 
 # predictors 
 
-PA_selfreport <- read.delim(paste0(indata, "abcd_yrb01.txt"), header = T, na.strings=c("","NA")) # Physical activity - self reports
-sleep_reports <- read.delim(paste0(indata, "abcd_sds01.txt"), header = T, na.strings=c("","NA")) # sleep - reports
-friends_n <- read.delim(paste0(indata, "abcd_ysr01.txt"), header = T, na.strings = c("", "NA")) # friends
-screen_p <- read.delim(paste0(indata, "stq01.txt"), header = T, na.strings = c("", "NA")) # screen
+PA_selfreport <- read.delim(paste0(indata, "abcd_yrb01.txt"), header = T, na.strings=c("","NA")) 
+sleep_reports <- read.delim(paste0(indata, "abcd_sds01.txt"), header = T, na.strings=c("","NA")) 
+friends_n <- read.delim(paste0(indata, "abcd_ysr01.txt"), header = T, na.strings = c("", "NA")) 
+screen_p <- read.delim(paste0(indata, "stq01.txt"), header = T, na.strings = c("", "NA")) 
 
 
 # covariates
 
-demo <- read.delim(paste0(indata, "abcd_lpds01.txt"), header = T, na.strings=c("","NA")) # longitudinal demographics data 
-ethn_sib <- read.delim(paste0(indata, "acspsw03.txt"), header = T, na.strings=c("","NA")) # for ethnicity data & familiarity 
-pub_child <- read.delim(paste0(indata, "abcd_ssphy01.txt"), header = T, na.strings=c("","NA")) # child rated perceived pubertal stage
-site <- read.delim(paste0(indata, "abcd_lt01.txt"), header = T, na.strings=c("","NA")) # site
-parpsych <- read.delim(paste0(indata, "abcd_asrs01.txt"), header = T, na.strings=c("","NA")) # parental psychopathology 
-mat_age <- read.csv(paste0(indata, "dhx01.txt")) # maternal age
-income <- read.csv(paste0(indata, "abcd_p_demo.csv")) # income
+demo <- read.delim(paste0(indata, "abcd_lpds01.txt"), header = T, na.strings=c("","NA"))
+ethn_sib <- read.delim(paste0(indata, "acspsw03.txt"), header = T, na.strings=c("","NA")) 
+pub_child <- read.delim(paste0(indata, "abcd_ssphy01.txt"), header = T, na.strings=c("","NA")) 
+site <- read.delim(paste0(indata, "abcd_lt01.txt"), header = T, na.strings=c("","NA")) 
+parpsych <- read.delim(paste0(indata, "abcd_asrs01.txt"), header = T, na.strings=c("","NA")) 
+mat_age <- read.csv(paste0(indata, "dhx01.txt")) 
+income <- read.csv(paste0(indata, "abcd_p_demo.csv"))
 
 # selection 
-prs <- fread(paste0(indata, "ABCD PRS/", "abcd_prs.txt")) # polygenic score for risk for depression
-trauma <- read.delim(paste0(indata, "abcd_mhy02.txt"), header = T, na.strings=c("","NA")) # stressful life events
+prs <- fread(paste0(indata, "ABCD PRS/", "abcd_prs.txt")) 
+trauma <- read.delim(paste0(indata, "abcd_mhy02.txt"), header = T, na.strings=c("","NA")) 
 
 
 ############
@@ -52,11 +52,10 @@ trauma <- read.delim(paste0(indata, "abcd_mhy02.txt"), header = T, na.strings=c(
 
 # merge demo and psych data
 demo <- demo[demo$eventname == "baseline_year_1_arm_1" | demo$eventname == "1_year_follow_up_y_arm_1", c("sex", "demo_prnt_ed_v2_l", "src_subject_id", "eventname", "interview_age", "demo_comb_income_v2_l")]
-# take baseline for most measures. for parental education you need 1y FU cause that's when most data is
 bpm <- bpm[bpm$eventname == "6_month_follow_up_arm_1" | bpm$eventname == "30_month_follow_up_arm_1", c("eventname", "src_subject_id","bpm_y_scr_internal_r", "bpm_y_scr_internal_t")]
 
 # order
-demo <- demo[with(demo, order(src_subject_id, eventname)), ] # order by id and time-period (because we are working with longitudinal data - long format)
+demo <- demo[with(demo, order(src_subject_id, eventname)), ] 
 bpm <- bpm[with(bpm, order(src_subject_id, eventname)), ]
 
 # merge 
@@ -134,12 +133,6 @@ dd <- merged12
 # Data-frame checks
 #####
 
-head(dd)
-tail(dd) # there is a line with description of the dataset
-str(dd) # all vars are chr --> need to change that
-names(dd)
-
-
 # change variable type
 dd2 <- dd %>% 
   # recode parent edu
@@ -188,8 +181,7 @@ dd2 <- dd %>%
                                  "999" = "no_answer", 
                                  "777" = "no_answer")
   ) %>%
-  mutate(t = factor(eventname), # when you use levels(factor(dd$eventname)) it shows the order it uses is 1y FU, 2y, 3 and baseline.
-         # we are interested in baseline and 2y 
+  mutate(t = factor(eventname), 
          sex = factor(sex),
          parent_edu = factor(parent_edu, ordered = T),
          ethn = factor(race_ethnicity, levels = c(1,2,3,4,5), labels = c("white",  "black",  "hispanic", "asian", "other")),
@@ -209,8 +201,7 @@ dd2 <- dd %>%
          screentime2_p_hours = as.numeric(screentime2_p_hours), 
          screentime2_p_minutes = as.numeric(screentime2_p_minutes), 
          sleep = factor(sleep, ordered = T),
-         sleep = fct_rev(sleep), # reverse the order of the sleep measure cause
-         # now it has 9_11 as the lowest cat 
+         sleep = fct_rev(sleep),
          pa = as.numeric(physical_activity1_y), 
          par_psych = as.numeric(asr_scr_totprob_r),
          mat_age = as.numeric(devhx_3_p), 
@@ -249,8 +240,6 @@ dd2$income <- factor(dd2$income, ordered = T)
 
 dd2 <- as_tibble(dd2)
 
-### pivot to wider - i.e. get the wide format ###
-
 df.wide <- dd2 %>% 
   pivot_wider(
     names_from = t, # the variable you want to use for the name of the vars
@@ -265,21 +254,17 @@ df.wide <- dd2 %>%
 
 
 
-### keep only cols needed ###
-# delete all cols that have only NAs
-# this happens because we have a timepoint (1y and 3y FU which has no data for most vars.)
+### keep only the needed columns ###
+# delete all columns that have only NAs
+# this happens because we have two timepoints (1y and 3y FU which have no data for most vars.)
 
 dd2 <- df.wide[ , colSums(is.na(df.wide)) < nrow(df.wide)] 
-
 
 # delete any cols not relevant
 dd2$parent_edu.baseline_year_1_arm_1 <- NULL
 dd2$age.1_year_follow_up_y_arm_1 <- NULL
 dd2$sex.1_year_follow_up_y_arm_1 <- NULL
 dd2$`ple_y_ss_total_bad.The event name for which the data was collected` <- NULL
-
-# replace the names of the eventname (e.g. baseline_year_1_arm_1) with shorter names (e.g. t1)
-# so the cols of the df are shorter and quicker to interpret
 
 names(dd2) <- gsub(x = names(dd2), pattern = "baseline_year_1_arm_1", replacement = "t1")
 names(dd2) <- gsub(x = names(dd2), pattern = "3_year_follow_up_y_arm_1", replacement = "t2")
@@ -314,7 +299,7 @@ for(i in 1:nrow(dd2)){
     dd2$puberty[i] <- dd2$pub_female.t1[i]
   }else if(is.na(dd2$pub_male.t1[i]) & is.na(dd2$pub_female.t1[i])){
     dd2$puberty[i] <- dd2$puberty[i]
-  }else(stop("there might be an error!!!"[i]))
+  }else(stop("there might be an error!"[i]))
 }
 
 
@@ -388,14 +373,13 @@ dd3$age.t1 <- dd3$age.t1/12
 
 general <- dd3 %>% 
   # have psych data at baseline
-  subset(!is.na(int.6m)) %>% # 11238 with data at baseline
+  subset(!is.na(int.6m)) %>% 
   # have data on either of the modifiable factors
-  subset(!is.na(pa.t1) | !is.na(sleep.t1) | !is.na(friends_tot) | !is.na(tot_screen)) %>% # same as above 11238
+  subset(!is.na(pa.t1) | !is.na(sleep.t1) | !is.na(friends_tot) | !is.na(tot_screen)) %>% 
   # not have clinical levels of internalizing problems
-  subset(int_t.6m < 65) %>% # 10354
+  subset(int_t.6m < 65) %>% 
   # keep one person from the same family
   subset(!duplicated(family_id.t1))
-# 8699 tot
 
 
 #### sensitvity analysis TTE ####
@@ -403,19 +387,11 @@ general <- dd3 %>%
 
 ## inclusion and exclusion
 sensitivity <- dd3 %>% 
-  # have psych data at baseline
-  subset(!is.na(int.6m)) %>% # 11238 with data at baseline
-  # have data on either of the modifiable factors
-  subset(!is.na(pa.t1) | !is.na(sleep.t1) | !is.na(friends_tot) | !is.na(tot_screen)) %>% # same as above 11238
-  # keep one person from the same family
+  subset(!is.na(int.6m)) %>% 
+  subset(!is.na(pa.t1) | !is.na(sleep.t1) | !is.na(friends_tot) | !is.na(tot_screen)) %>% 
   subset(!duplicated(family_id.t1))
-# 9337 children 
 
-# so it is 11,876 - 11,238 = 638 without internalizing problems or modifiable factors data
-# 11,238 - 10,354 = 884 without clinically-relevant internalizing problems
-# 10354 - 8699 = 1655 duplicated family id
-
-
+  
 ## select relevant variables and rename
 general_final <- general %>% select(id, int.6m, int.30m, int_t.6m,
                                     parent_edu.1yfu, sleep.t1, site.t1, 
@@ -523,18 +499,14 @@ table1
 # Imputation 
 #########
 ### Variables 
+
 # specify the variables that can aid the prediction (i.e. help predict the missingness in other variables)
 predictors_for_imputation <- c("parent_edu", "mat_age", "income", "par_psych", "sex", "puberty", "site")
-
-# specify the variables that you want to impute. It's important to add in the predictors for imputation 
-## this is important because if our predictors have NAs, our output of the imputation will also present NAs 
 impvars <- c("ethn", predictors_for_imputation)  
 
-#dryrun mice (page 35 mice guide)
+# dryrun mice (page 35 mice guide)
 dd$id <- factor(dd$id)
 ini <- mice(dd, maxit = 0, printF = FALSE)
-# nb if you see a logged event where it's about constant as id 
-# then it's about that var being a character. 
 
 ### Prediction matrix
 # set the prediction matrix completely to 0, i.e. nothing predicts anything
@@ -556,8 +528,6 @@ meth <- ini$meth
 meth[!names(meth) %in% impvars] <- "" 
 
 ### Order of imputation 
-# the order in which variables are imputed matters in mice. 
-# You can first put vars which can be predictive of the following vars 
 visit <- ini$visit
 visit <- visit[visit %in% impvars]
 visit2 <- c("parent_edu", "par_psych", "puberty", 'ethn', "mat_age", "income")
@@ -578,7 +548,7 @@ dd <- readRDS(paste0(indata, "modifiable_dep_youth_imp3030_Jan2024.rds"))
 
 original_df <- readRDS(paste0(indata, "modif_dep_abcd_youth_main_Jan2024.rds"))
 
-# merge imputated values with original values
+# merge imputed values with original values
 dd2 <- merge_imputations(
   original_df,
   dd,
@@ -606,7 +576,6 @@ dd3 <- dd2 %>% select(id, int_t1, int_tscore_t1, int_t2,
 
 dd4 <- dd3
 
-
 # save dataset - universal prevention (all kids)
 saveRDS(dd4, paste0(indata, "modifiable_dep_youth_imp3030_merged_Jan2024_FINAL_UNIVERSAL.rds"))
 
@@ -620,16 +589,19 @@ saveRDS(dd4, paste0(indata, "modifiable_dep_youth_imp3030_merged_Jan2024_FINAL_U
 # for site, several levels will not be present for subsamples
 # for the race/ethnicity variable, just white individuals will be included
 # in the genetic subsample
-# to ensure that analyses can be concurrently ran across all subsamples, 
+# to ensure that analyses can be concurrently run across all subsamples, 
 # we need to residualize for these covariates instead of including them in the 
-# covariate vector (see scripts 2 and 3 and 4)
+# covariate vector (see scripts 2, 3 and 4)
 
 ### preparation for the subsamples ###
 
+# retain the original internalizing problems
+dd4$int_t2_og <- dd4$int_t2
+  
 # residualize for site
 m1 = lm(int_t2 ~ site, data = dd4, na.action = na.exclude)
 
-dd4$int_t2 = residuals(m1)
+dd4$int_t2 <- residuals(m1)
 
 # reisdualize for ethn
 m2 <- lm(int_t2 ~ ethn, data=dd4, na.action = na.exclude)
@@ -638,9 +610,6 @@ dd4$int_t2 <- residuals(m2)
 # center internalizing problems after residualization, to ensure interpretability 
 # of the results
 dd4$int_t2_centered <- scale(dd4$int_t2)
-
-# retain the original internalizing problems
-dd4$int_t2_og <- dd4$int_t2
 
 # use the centered variable as main 
 dd4$int_t2 <- dd4$int_t2_centered
@@ -695,7 +664,7 @@ saveRDS(hEr, paste0(indata, "modifiable_dep_youth_imp3030_merged_Jan2024_FINAL_S
 saveRDS(indicated, paste0(indata, "modifiable_dep_youth_imp3030_merged_Jan2024_FINAL_INDICATED.rds"))
 
 
-# combine and save all datasets together
+# combine and save all datasets into one list
 list_dd <- list(dd4, hGr, hEr, indicated)
 names(list_dd) <- c("universal", "selective_genetic", "selective_trauma", "indicated")
 
@@ -724,7 +693,7 @@ family$composite_fam <- (family$crpbi_parent1_y + family$crpbi_parent2_y + famil
 family2 <- family[family$eventname == "baseline_year_1_arm_1", ]
 
 # create datasets for the sensitivity analysis
-sens_adj_dd4 <- merge(dd4, family2, by.x = "id", by.y = "src_subject_id") #8699 people
+sens_adj_dd4 <- merge(dd4, family2, by.x = "id", by.y = "src_subject_id") 
 sens_adj_hEr <- merge(hEr, family2, by.x = "id", by.y = "src_subject_id")
 sens_adj_hGr <- merge(hGr, family2, by.x = "id", by.y = "src_subject_id")
 sens_adj_indicated <- merge(indicated, family2, by.x = "id", by.y = "src_subject_id")
@@ -751,7 +720,6 @@ names(datasets) <- c("universal", "selective_genetic", "selective_trauma", "indi
 
 # save
 save(dd4, hGr, hEr, indicated, low_hGr, low_indicated, datasets, file = paste0(indata,"modifiable_dep_youth_alldata_inclSens.RData"))
-
 
 
 #######
@@ -800,6 +768,4 @@ table1
 
 summary_stats <- lapply(list_dd, function(x) psych::describe(x)) 
 write.csv(summary_stats, paste0(tab, "descriptive_stats_allsamples_modifiable_dep_youth.csv"))
-
-summary_stats <- lapply(list_dd, function(x) summary(x)) 
-
+                        
