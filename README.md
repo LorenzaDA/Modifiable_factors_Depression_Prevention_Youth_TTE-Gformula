@@ -5,7 +5,7 @@ This repository is in reference to the manuscript **Evaluating Preventive Strate
 **GUIDE TO THE REPOSITORY**
 
 Scripts are organized by study (ABCD and GenR). Within each folder, please follow the scripts in numerical order. 
-**These scripts are LICENCED. Should you use them for your research, please CITE our work at [DOI]**
+**These scripts are LICENCED. Should you use them for your research, please CITE our work at https://doi.org/10.1037/ccp0000912**
 **For any questions, please contact ldallaglio@mgh.harvard.edu**
 
 
